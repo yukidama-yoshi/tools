@@ -26,7 +26,7 @@
         li {
             margin: 10px 0;
         }
-        a {
+        a.tool-link {
             text-decoration: none;
             color: #3498db;
             font-weight: bold;
@@ -37,10 +37,51 @@
             background: #fff;
             transition: 0.2s;
         }
-        a:hover {
+        a.tool-link:hover {
             background: #f0f7ff;
             border-color: #3498db;
         }
+
+        /* --- カウンター専用スタイル（A館と共通） --- */
+        .counter-container {
+            margin: 20px 0;
+            text-align: center;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .counter-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #counter-area {
+            margin: 0 10px;
+            padding: 5px;
+            background: #000;
+            border: 2px inset #ccc;
+            display: inline-block;
+            line-height: 0;
+        }
+        .counter-digits {
+            display: flex;
+            gap: -2px;
+        }
+        .counter-digits img {
+            height: 28px;
+            width: auto;
+            image-rendering: pixelated;
+        }
+        .kiriban-note {
+            font-size: 11px;
+            color: #666;
+        }
+        .kiriban-note a { color: #1da1f2; text-decoration: underline; }
+        #admin-badge { font-size: 10px; color: red; display: none; }
     </style>
 </head>
 <body>
@@ -48,11 +89,72 @@
     <h1>ツール置き場</h1>
     <p>AIくんと作ったまあまあ便利なWebツールを公開しています。</p>
 
-    <ul>
-        <li><a href="bbtouka.html">BB＆GB 背景透過ツール</a></li>
-        <li><a href="dakuten.html">キモオタ濁点ジェネレーター</a></li>
+    <div class="counter-container">
+        <div class="counter-wrapper">
+            ツール利用数：
+            <div id="counter-area">
+                <div id="counter-display" class="counter-digits"></div>
+            </div>
+            回！
+        </div>
+        <div id="admin-badge">●管理者モード（カウント除外中）</div>
+        <div class="kiriban-note">
+            キリ番報告は <a id="twitter-share" href="#" target="_blank" rel="noopener">Twitter</a> へ！
+        </div>
+    </div>
 
-        </ul>
+    <ul>
+        <li><a href="bbtouka.html" class="tool-link">BB＆GB 背景透過ツール</a></li>
+        <li><a href="dakuten.html" class="tool-link">キモオタ濁点ジェネレーター</a></li>
+    </ul>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 40px 0 20px;">
+    <p style="text-align: center; font-size: 12px;"><a href="index.html" style="color: #999;">← A館トップへ戻る</a></p>
+
+    <script>
+        async function loadCounter() {
+            const displayArea = document.getElementById('counter-display');
+            const twitterLink = document.getElementById('twitter-share');
+            const adminBadge = document.getElementById('admin-badge');
+            const WORKER_URL = 'https://dry-silence-4f1f.y-bb0.workers.dev';
+            const IMAGE_PATH = 'akusesu_kaunta_moji_sozai/'; // 画像パスがA館と違う場合は要修正
+            const SITE_URL = window.location.href;
+            
+            // ツールページ用の個別ID
+            const pageId = "tool_page";
+
+            // 管理者モード判定（A館での設定を引き継ぐ）
+            const isAdmin = localStorage.getItem('is_admin_yukidama') === 'true';
+
+            try {
+                // ID指定と管理者除外を反映したURL
+                let fetchUrl = `${WORKER_URL}?id=${pageId}`;
+                if (isAdmin) fetchUrl += "&no-count=1";
+
+                const response = await fetch(fetchUrl);
+                const data = await response.json();
+                const countStr = String(data.count).padStart(6, '0');
+
+                if (isAdmin) adminBadge.style.display = 'block';
+
+                // ツイート内容
+                const tweetText = `ゆきだまの「ツール置き場」でキリ番（${countStr}）を踏んだよ！\n${SITE_URL}\n\n@yukidama_yoshi`;
+                twitterLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+
+                // 画像表示
+                displayArea.innerHTML = ''; 
+                for (let char of countStr) {
+                    const img = document.createElement('img');
+                    img.src = `${IMAGE_PATH}${char}.png`;
+                    img.alt = char;
+                    displayArea.appendChild(img);
+                }
+            } catch (err) {
+                displayArea.innerHTML = '<span style="color:#f00; font-size:10px;">ERR</span>';
+            }
+        }
+        loadCounter();
+    </script>
 
 </body>
 </html>
