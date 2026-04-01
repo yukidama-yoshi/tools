@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ブラウザ電卓</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; background-color: #f4f7f9; color: #333; }
+        .nav-header { margin-bottom: 20px; }
+        .btn-back { text-decoration: none; font-size: 14px; color: #666; }
+        h1 { margin-top: 0; font-size: 1.4rem; color: #222; }
+        p { font-size: 0.8rem; color: #777; line-height: 1.5; margin-bottom: 20px; }
+
+        .calculator-container {
+            background: #fff; border-radius: 16px; padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06); border: 1px solid #eaeaea;
+        }
+
+        .display {
+            width: 100%; height: 80px; background: #f8f9fa; border: none; border-radius: 12px;
+            margin-bottom: 24px; text-align: right; padding: 15px 20px; font-size: 2.2rem;
+            box-sizing: border-box; color: #1a1a1a; font-variant-numeric: tabular-nums;
+        }
+
+        .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        button {
+            padding: 18px 0; cursor: pointer; border: none; border-radius: 12px;
+            font-weight: 600; font-size: 1.2rem; transition: all 0.15s ease; background: #f1f3f5; color: #495057;
+        }
+        button:hover { background: #e9ecef; transform: translateY(-1px); }
+        button:active { transform: translateY(1px); background: #dee2e6; }
+
+        .btn-operator { color: #228be6; background: #e7f5ff; }
+        .btn-equal { background: #222; color: #fff; grid-row: span 2; height: 100%; }
+        .btn-equal:hover { background: #000; }
+        .btn-clear { color: #fa5252; background: #fff5f5; }
+
+        .status-msg { font-size: 0.7rem; color: #adb5bd; margin-top: 20px; text-align: center; letter-spacing: 0.05em; }
+        .security-badge { display: inline-block; background: #4dabf7; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; margin-left: 8px; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-header">
+        <a href="#" class="btn-back">← ツール一覧に戻る</a>
+    </nav>
+
+    <h1>ブラウザ電卓 <span class="security-badge">ベータ版</span></h1>
+    <p>ブラウザで動くシンプルな電卓。<br>誰でも簡単に使用することができます。広告もありません。</p>
+
+    <div class="calculator-container">
+        <input type="text" id="display" class="display" readonly value="0">
+        
+        <div class="keypad">
+            <button class="btn-clear" onclick="clearDisplay()">AC</button>
+            <button class="btn-operator" onclick="appendOperator('/')">÷</button>
+            <button class="btn-operator" onclick="appendOperator('*')">×</button>
+            <button class="btn-operator" onclick="deleteLast()">⌫</button>
+
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button class="btn-operator" onclick="appendOperator('-')">-</button>
+
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button class="btn-operator" onclick="appendOperator('+')">+</button>
+
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button class="btn-equal" onclick="calculate()">=</button>
+
+            <button onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+            <button onclick="appendNumber('.')">.</button>
+        </div>
+    </div>
+   
+
+    <script>
+        const display = document.getElementById('display');
+        let currentInput = '0';
+        let shouldResetScreen = false;
+        const MAX_DIGITS = 15;
+
+        function updateDisplay() {
+            display.value = currentInput;
+        }
+
+        function appendNumber(number) {
+            if (currentInput === '0' || shouldResetScreen) {
+                currentInput = (number === '.') ? '0.' : number;
+                shouldResetScreen = false;
+            } else {
+                const parts = currentInput.split(/[+\-*/]/);
+                const lastSegment = parts[parts.length - 1];
+
+                if (number === '.' && lastSegment.includes('.')) return;
+                if (lastSegment.replace('.', '').length >= 12) return;
+                if (currentInput.replace(/[+\-*/.]/g, '').length >= MAX_DIGITS) return;
+
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(operator) {
+            if (shouldResetScreen) shouldResetScreen = false;
+            
+            const lastChar = currentInput.slice(-1);
+            const secondLastChar = currentInput.slice(-2, -1);
+            const operators = ['+', '-', '*', '/'];
+            const isOp = (c) => operators.includes(c);
+
+            // 演算子の連続入力ガード
+            if (isOp(lastChar)) {
+                // 負の数(単項マイナス)の特殊処理: *-, /- の形は許可
+                if (operator === '-' && (lastChar === '*' || lastChar === '/')) {
+                    currentInput += operator;
+                } else if (isOp(secondLastChar)) {
+                    // すでに2つ演算子が並んでいる(例: *-)場合は2つとも置換
+                    currentInput = currentInput.slice(0, -2) + operator;
+                } else {
+                    // 通常の演算子置換
+                    currentInput = currentInput.slice(0, -1) + operator;
+                }
+            } else {
+                currentInput += operator;
+            }
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            shouldResetScreen = false;
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            if (shouldResetScreen) {
+                shouldResetScreen = false;
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
+            }
+            updateDisplay();
+        }
+
+        function calculate() {
+            try {
+                let expression = currentInput.replace(/[+\-*/]+$/, '');
+                if (!expression) return;
+
+                // 文字列を解析して計算
+                const result = evaluateExpression(expression);
+
+                if (!isFinite(result)) throw new Error();
+
+                // 浮動小数点誤差を考慮した丸め処理
+                const rounded = Math.round(result * 1e10) / 1e10;
+                currentInput = rounded.toString();
+                shouldResetScreen = true;
+                updateDisplay();
+            } catch (e) {
+                display.value = "Error";
+                currentInput = '0';
+                shouldResetScreen = true;
+            }
+        }
+
+        // --- Parser Logic ---
+        function evaluateExpression(expr) {
+            const tokens = tokenize(expr);
+            let index = 0;
+
+            const consume = () => {
+                if (index >= tokens.length) return null;
+                return tokens[index++];
+            };
+
+            const peek = () => tokens[index];
+
+            const parseNumber = () => {
+                const token = consume();
+                if (token === null) throw new Error();
+                const num = parseFloat(token);
+                if (isNaN(num)) throw new Error();
+                return num;
+            };
+
+            const parseUnary = () => {
+                if (peek() === '-') {
+                    consume();
+                    return -parseUnary();
+                }
+                if (peek() === '+') {
+                    consume();
+                    return parseUnary();
+                }
+                return parseNumber();
+            };
+
+            const parseMulDiv = () => {
+                let left = parseUnary();
+                while (peek() === '*' || peek() === '/') {
+                    const op = consume();
+                    const right = parseUnary();
+                    left = (op === '*') ? left * right : left / right;
+                }
+                return left;
+            };
+
+            const parseAddSub = () => {
+                let left = parseMulDiv();
+                while (peek() === '+' || peek() === '-') {
+                    const op = consume();
+                    const right = parseMulDiv();
+                    left = (op === '+') ? left + right : left - right;
+                }
+                return left;
+            };
+
+            return parseAddSub();
+        }
+
+        function tokenize(expr) {
+            const tokens = [];
+            let i = 0;
+            while (i < expr.length) {
+                if (/[\d.]/.test(expr[i])) {
+                    let num = "";
+                    while (i < expr.length && /[\d.]/.test(expr[i])) num += expr[i++];
+                    tokens.push(num);
+                } else if (['+', '-', '*', '/'].includes(expr[i])) {
+                    tokens.push(expr[i++]);
+                } else {
+                    i++; // 無視
+                }
+            }
+            return tokens;
+        }
+
+        // Key bindings
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            else if (e.key === '.') appendNumber('.');
+            else if (['+', '-', '*', '/'].includes(e.key)) { e.preventDefault(); appendOperator(e.key); }
+            else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculate(); }
+            else if (e.key === 'Backspace') { e.preventDefault(); deleteLast(); }
+            else if (e.key === 'Escape') clearDisplay();
+        });
+    </script>
+</body>
+</html>
