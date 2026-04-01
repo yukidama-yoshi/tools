@@ -42,7 +42,7 @@
             border-color: #3498db;
         }
 
-        /* --- カウンター専用スタイル（A館と共通） --- */
+        /* --- カウンター専用スタイル（欠け対策済み） --- */
         .counter-container {
             margin: 20px 0;
             text-align: center;
@@ -61,27 +61,36 @@
         }
         #counter-area {
             margin: 0 10px;
-            padding: 5px;
+            /* 左右のpaddingを広めにとって、ブラウザの計算ズレによる「欠け」を防止 */
+            padding: 6px 12px; 
             background: #000;
             border: 2px inset #ccc;
             display: inline-block;
             line-height: 0;
+            /* ズーム倍率による端数カットを防ぐための重要設定 */
+            overflow: visible; 
+            width: auto;
+            min-width: fit-content;
         }
         .counter-digits {
             display: flex;
-            gap: -2px;
+            justify-content: center;
+            align-items: center;
+            gap: 0; /* 隙間を固定 */
         }
         .counter-digits img {
             height: 28px;
             width: auto;
-            image-rendering: pixelated;
+            display: block;
+            margin: 0;
+            image-rendering: pixelated; /* ドットをクッキリさせる */
         }
         .kiriban-note {
             font-size: 11px;
             color: #666;
         }
         .kiriban-note a { color: #1da1f2; text-decoration: underline; }
-        #admin-badge { font-size: 10px; color: red; display: none; }
+        #admin-badge { font-size: 10px; color: red; display: none; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -116,13 +125,13 @@
             const twitterLink = document.getElementById('twitter-share');
             const adminBadge = document.getElementById('admin-badge');
             const WORKER_URL = 'https://dry-silence-4f1f.y-bb0.workers.dev';
-            const IMAGE_PATH = 'akusesu_kaunta_moji_sozai/'; // 画像パスがA館と違う場合は要修正
+            const IMAGE_PATH = 'akusesu_kaunta_moji_sozai/'; 
             const SITE_URL = window.location.href;
             
             // ツールページ用の個別ID
             const pageId = "tool_page";
 
-            // 管理者モード判定（A館での設定を引き継ぐ）
+            // 管理者モード判定
             const isAdmin = localStorage.getItem('is_admin_yukidama') === 'true';
 
             try {
