@@ -42,7 +42,7 @@
             border-color: #3498db;
         }
 
-        /* --- カウンター専用スタイル（欠け対策済み） --- */
+        /* --- カウンター専用スタイル（サイズ微増・欠け対策） --- */
         .counter-container {
             margin: 20px 0;
             text-align: center;
@@ -61,29 +61,27 @@
         }
         #counter-area {
             margin: 0 10px;
-            /* 左右のpaddingを広めにとって、ブラウザの計算ズレによる「欠け」を防止 */
             padding: 6px 12px; 
             background: #000;
             border: 2px inset #ccc;
             display: inline-block;
             line-height: 0;
-            /* ズーム倍率による端数カットを防ぐための重要設定 */
             overflow: visible; 
             width: auto;
-            min-width: fit-content;
         }
         .counter-digits {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 0; /* 隙間を固定 */
+            gap: 0;
         }
         .counter-digits img {
-            height: 28px;
+            /* 画像サイズを少し大きく（28px → 32px） */
+            height: 32px; 
             width: auto;
             display: block;
             margin: 0;
-            image-rendering: pixelated; /* ドットをクッキリさせる */
+            image-rendering: pixelated;
         }
         .kiriban-note {
             font-size: 11px;
@@ -128,14 +126,10 @@
             const IMAGE_PATH = 'akusesu_kaunta_moji_sozai/'; 
             const SITE_URL = window.location.href;
             
-            // ツールページ用の個別ID
             const pageId = "tool_page";
-
-            // 管理者モード判定
             const isAdmin = localStorage.getItem('is_admin_yukidama') === 'true';
 
             try {
-                // ID指定と管理者除外を反映したURL
                 let fetchUrl = `${WORKER_URL}?id=${pageId}`;
                 if (isAdmin) fetchUrl += "&no-count=1";
 
@@ -145,11 +139,9 @@
 
                 if (isAdmin) adminBadge.style.display = 'block';
 
-                // ツイート内容
                 const tweetText = `ゆきだまの「ツール置き場」でキリ番（${countStr}）を踏んだよ！\n${SITE_URL}\n\n@yukidama_yoshi`;
                 twitterLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
-                // 画像表示
                 displayArea.innerHTML = ''; 
                 for (let char of countStr) {
                     const img = document.createElement('img');
