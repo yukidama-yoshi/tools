@@ -42,7 +42,7 @@
             border-color: #3498db;
         }
 
-        /* --- カウンター専用スタイル（サイズ微増・欠け対策） --- */
+        /* --- カウンター専用スタイル --- */
         .counter-container {
             margin: 20px 0;
             text-align: center;
@@ -66,8 +66,10 @@
             border: 2px inset #ccc;
             display: inline-block;
             line-height: 0;
+            /* 欠け対策：はみ出しを許可し、幅に余裕を持たせる */
             overflow: visible; 
             width: auto;
+            min-width: fit-content;
         }
         .counter-digits {
             display: flex;
@@ -76,7 +78,7 @@
             gap: 0;
         }
         .counter-digits img {
-            /* 画像サイズを少し大きく（28px → 32px） */
+            /* 画像サイズを32pxに調整 */
             height: 32px; 
             width: auto;
             display: block;
@@ -126,22 +128,39 @@
             const IMAGE_PATH = 'akusesu_kaunta_moji_sozai/'; 
             const SITE_URL = window.location.href;
             
+            // ツールページ用の個別ID
             const pageId = "tool_page";
+
+            // 1. 管理者判定（A館での設定を引き継ぐ）
             const isAdmin = localStorage.getItem('is_admin_yukidama') === 'true';
+
+            // 2. 二重カウント防止チェック（同じタブで開いている間は1回だけ）
+            const hasCounted = sessionStorage.getItem('has_counted_' + pageId) === 'true';
 
             try {
                 let fetchUrl = `${WORKER_URL}?id=${pageId}`;
-                if (isAdmin) fetchUrl += "&no-count=1";
+
+                // 管理者、またはこのタブで既にカウント済みの場合は no-count=1 を付与
+                if (isAdmin || hasCounted) {
+                    fetchUrl += "&no-count=1";
+                }
 
                 const response = await fetch(fetchUrl);
                 const data = await response.json();
                 const countStr = String(data.count).padStart(6, '0');
 
+                // 3. カウントに成功し、かつ管理者でない場合のみフラグを立てる
+                if (!isAdmin && !hasCounted) {
+                    sessionStorage.setItem('has_counted_' + pageId, 'true');
+                }
+
                 if (isAdmin) adminBadge.style.display = 'block';
 
+                // ツイート内容
                 const tweetText = `ゆきだまの「ツール置き場」でキリ番（${countStr}）を踏んだよ！\n${SITE_URL}\n\n@yukidama_yoshi`;
                 twitterLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
+                // 画像表示
                 displayArea.innerHTML = ''; 
                 for (let char of countStr) {
                     const img = document.createElement('img');
