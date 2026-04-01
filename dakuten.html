@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キモオタ濁点ジェネレーター</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; }
+        
+        .nav-header { margin-bottom: 20px; }
+        .btn-back { 
+            text-decoration: none; 
+            font-size: 14px; 
+            color: #666; 
+            display: inline-flex; 
+            align-items: center; 
+            transition: color 0.2s;
+        }
+        .btn-back:hover { color: #000; }
+
+        h1 { margin-top: 10px; font-size: 1.5rem; }
+        textarea { width: 100%; height: 120px; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 15px; resize: vertical; }
+        
+        .btn-copy { 
+            width: 100%; 
+            padding: 14px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            background: #007bff; 
+            color: #fff; 
+            transition: 0.2s; 
+        }
+        .btn-copy:hover { background: #0056b3; }
+        
+        .result-area { margin-top: 20px; padding: 15px; background: white; border: 1px solid #eee; border-radius: 8px; min-height: 60px; white-space: pre-wrap; word-break: break-all; font-size: 18px; line-height: 1.6; }
+        .status-msg { font-size: 0.9em; color: #28a745; margin-top: 5px; height: 1.2em; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-header">
+        <a href="./" class="btn-back">← トップへ戻る</a>
+    </nav>
+
+    <h1>キモオタ濁点ジェネレーター</h1>
+    <p>入力するとリアルタイムで「゛」を挿入します。</p>
+
+    <textarea id="input" oninput="addDakuten()" placeholder="かわいいなあ たいちくん"></textarea>
+    
+    <button class="btn-copy" onclick="copyText()">結果をコピー</button>
+    <div id="copy-msg" class="status-msg"></div>
+
+    <div class="result-area" id="output"></div>
+
+    <script>
+        function addDakuten() {
+            const str = document.getElementById('input').value;
+            if (!str) {
+                document.getElementById('output').innerText = '';
+                return;
+            }
+            
+            const ignoreChars = /[、。，．！？!?\s\n]/;
+            const alreadyHasDakuten = /[がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ]/;
+
+            const result = str.split('').map(char => {
+                if (ignoreChars.test(char) || alreadyHasDakuten.test(char)) {
+                    return char;
+                }
+                // 1文字ごとに濁点をつける
+                return char + '゛';
+            }).join('');
+            
+            document.getElementById('output').innerText = result;
+            document.getElementById('copy-msg').innerText = ''; 
+        }
+
+        async function copyText() {
+            const text = document.getElementById('output').innerText;
+            if (!text) return;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                const msg = document.getElementById('copy-msg');
+                msg.innerText = 'コピーしました！';
+                setTimeout(() => { msg.innerText = ''; }, 2000);
+            } catch (err) {
+                alert('コピーに失敗しました');
+            }
+        }
+    </script>
+
+</body>
+</html>
