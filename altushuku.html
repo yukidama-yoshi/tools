@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像圧縮ツール</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 620px; margin: 0 auto; background-color: #f8f9fa; color: #333; line-height: 1.6; }
+        .nav-header { margin-bottom: 20px; }
+        .btn-back { text-decoration: none; font-size: 14px; color: #666; display: inline-flex; align-items: center; }
+        h1 { margin-top: 10px; font-size: 1.55rem; margin-bottom: 0.5rem; }
+        
+        .intro-text { font-size: 0.95rem; color: #555; margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eef0f2; }
+
+        .upload-area { 
+            background: white; border: 2px dashed #ddd; border-radius: 8px; padding: 35px 20px; 
+            text-align: center; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; 
+        }
+        .upload-area:hover { border-color: #007bff; background: #f8fbff; }
+        #fileInput { display: none; }
+
+        .mode-selector, .controls { 
+            background: white; padding: 18px; border-radius: 8px; border: 1px solid #eee; 
+            margin-bottom: 15px; display: none; 
+        }
+        .mode-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .mode-card { 
+            border: 2px solid #ddd; border-radius: 8px; padding: 14px; cursor: pointer; 
+            transition: all 0.2s; background: white; 
+        }
+        .mode-card:hover { border-color: #007bff; }
+        .mode-card.selected { border-color: #007bff; background: #e7f3ff; }
+        .mode-card-title { font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .mode-card-desc { font-size: 0.85rem; color: #666; }
+
+        .settings-section { 
+            border: 1px solid #e1e4e8; border-radius: 8px; padding: 16px; 
+            margin-bottom: 16px; background-color: #fafbfc; transition: 0.3s; 
+        }
+        .section-title { font-weight: bold; font-size: 14px; margin-bottom: 12px; color: #444; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+
+        /* グレーアウト設定（中身だけを薄くする） */
+        .disabled-section { opacity: 0.4; pointer-events: none; background-color: #f1f1f1; }
+
+        .preset-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .btn-preset { 
+            flex: 1; padding: 9px 10px; border: 1px solid #ddd; background: #fff; 
+            border-radius: 6px; cursor: pointer; font-size: 13px; min-width: 75px; transition: 0.2s; 
+        }
+        .btn-preset.active { background: #007bff; color: white; border-color: #0056b3; }
+
+        .range-slider { 
+            width: 100%; cursor: pointer; margin: 10px 0; -webkit-appearance: none; 
+            background: #ddd; height: 6px; border-radius: 3px; 
+        }
+        .range-slider::-webkit-slider-thumb { 
+            -webkit-appearance: none; width: 20px; height: 20px; background: #007bff; 
+            border-radius: 50%; cursor: pointer; border: 2px solid #fff; 
+        }
+
+        .val-badge { color: #007bff; font-weight: bold; font-size: 1.15rem; }
+        .slider-desc { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-top: -4px; }
+
+        .btn-exec { 
+            width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; 
+            font-weight: bold; font-size: 16px; background: #007bff; color: #fff; cursor: pointer; 
+            transition: 0.2s;
+        }
+        .btn-exec:hover:not(:disabled) { background: #0056b3; }
+        .btn-exec:disabled { background: #aaa; cursor: not-allowed; }
+        .btn-exec.danger-lock { background: #dc3545 !important; }
+
+        /* 警告ボックスの改善 */
+        .warning-box { 
+            background: #fff9db; color: #856404; border: 1px solid #ffe066; 
+            padding: 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; 
+            display: flex; gap: 10px; align-items: flex-start;
+        }
+        .warning-box svg { flex-shrink: 0; margin-top: 2px; }
+
+        .result-area { margin-top: 20px; padding: 18px; background: white; border: 1px solid #eee; border-radius: 8px; display: none; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .info-item { padding: 10px; background: #f8f9fa; border-radius: 6px; text-align: center; }
+        .info-label { display: block; color: #666; font-size: 11px; }
+        .info-value { font-weight: bold; font-size: 15px; }
+
+        .preview-img { 
+            max-width: 100%; height: auto; border-radius: 6px; margin-top: 15px; 
+            border: 1px solid #eee; 
+            background: repeating-linear-gradient(45deg, #f8f9fa, #f8f9fa 10px, #fff 10px, #fff 20px); 
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-header"><a href="./" class="btn-back">← トップへ戻る</a></nav>
+    <h1>画像圧縮ツール</h1>
+
+    <div class="intro-text">
+        <p>ブラウザ完結・プライバシー保護の画像圧縮ツールです。<br>SNS投稿やWeb制作に最適なサイズへ一瞬で調整できます。</p>
+    </div>
+
+    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <p id="uploadText" style="font-weight:bold; margin:0;">ここに画像をドロップ、またはクリックして選択</p>
+        <p style="margin:6px 0 0; font-size:12.5px; color:#777;">JPEG / PNG / WebP 対応</p>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" onchange="handleFile(this.files[0])">
+    </div>
+
+    <div class="mode-selector" id="modeSelector">
+        <h3 style="font-size:0.95rem; margin-top:0;">1. モードを選択してください</h3>
+        <div class="mode-cards">
+            <div class="mode-card" id="m-resize" onclick="selectMode('resize')">
+                <div class="mode-card-title">📐 サイズ変更のみ</div>
+                <div class="mode-card-desc">縦横サイズを小さくして容量を削減</div>
+            </div>
+            <div class="mode-card" id="m-quality" onclick="selectMode('quality')">
+                <div class="mode-card-title">🎨 画質調整のみ</div>
+                <div class="mode-card-desc">サイズは変えず、画質を調整して容量を削減</div>
+            </div>
+            <div class="mode-card" id="m-hybrid" onclick="selectMode('hybrid')">
+                <div class="mode-card-title">💪 ハイブリッド（おすすめ）</div>
+                <div class="mode-card-desc">サイズ変更と画質調整を両方行います</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls" id="controls">
+        <h3 style="font-size:0.95rem; margin-top:0;">2. 詳細設定</h3>
+
+        <div id="resizeSettings" class="settings-section">
+            <div class="section-title">サイズ（縮小の強さ）</div>
+            <div class="preset-group" id="resizePresets">
+                <button class="btn-preset active" data-val="25" onclick="applyResizePreset(25)">少し (75%)</button>
+                <button class="btn-preset" data-val="50" onclick="applyResizePreset(50)">半分 (50%)</button>
+                <button class="btn-preset" data-val="75" onclick="applyResizePreset(75)">大幅 (25%)</button>
+            </div>
+            <label style="display:flex;justify-content:space-between;">強さ: <span><span id="cutVal" class="val-badge">25</span>%</span></label>
+            <input type="range" id="cutRange" class="range-slider" min="0" max="90" value="25" oninput="syncFromCut()">
+            <div class="slider-desc"><span>弱（そのまま）</span><span>強（最小）</span></div>
+            <div style="margin-top:12px; font-size:13px; color:#666; border-top:1px dashed #ddd; padding-top:12px;">
+                結果の横幅: <input type="number" id="targetWidth" style="width:90px; padding:5px; border:1px solid #ddd; border-radius:4px;" min="10" oninput="syncFromWidth()"> px
+                <span style="margin-left:auto; color:#999;">(元: <span id="origW">0</span>px)</span>
+            </div>
+        </div>
+
+        <div id="pngWarning" class="warning-box hidden">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <div>
+                <strong>PNG形式に関する注意</strong><br>
+                PNGは可逆圧縮のため画質設定による軽量化ができません。容量を減らすには「サイズ変更」を行うか、出力形式で「JPEG」や「WebP」を選択してください。
+            </div>
+        </div>
+
+        <div id="qualitySettings" class="settings-section">
+            <div class="section-title">画質（圧縮の強さ）</div>
+            <div class="preset-group" id="qualityPresets">
+                <button class="btn-preset" data-val="10" onclick="applyQualityPreset(10)">きれい</button>
+                <button class="btn-preset active" data-val="40" onclick="applyQualityPreset(40)">標準</button>
+                <button class="btn-preset" data-val="70" onclick="applyQualityPreset(70)">かるい</button>
+            </div>
+            <label style="display:flex;justify-content:space-between;">強さ: <span><span id="qLevelVal" class="val-badge">40</span><span id="qUnit">%</span></span></label>
+            <input type="range" id="qualityRange" class="range-slider" min="5" max="95" step="5" value="40" oninput="updateQualityLabel()">
+            <div class="slider-desc"><span>弱（高品質）</span><span>強（低品質）</span></div>
+        </div>
+
+        <h3 style="font-size:0.95rem; margin:12px 0 8px;">3. 出力形式を選択</h3>
+        <div class="settings-section">
+            <div class="preset-group" id="formatPresets">
+                <button class="btn-preset active" id="f-jpg" onclick="selectFormat('image/jpeg')">JPEG</button>
+                <button class="btn-preset" id="f-png" onclick="selectFormat('image/png')">PNG (透過)</button>
+                <button class="btn-preset" id="f-webp" onclick="selectFormat('image/webp')">WebP (軽量)</button>
+            </div>
+        </div>
+
+        <button id="execBtn" class="btn-exec" onclick="compressImage()">圧縮を実行する</button>
+    </div>
+
+    <div id="resultArea" class="result-area">
+        <div class="info-grid">
+            <div class="info-item"><span class="info-label">元サイズ</span><span id="origSize" class="info-value">-</span></div>
+            <div class="info-item"><span class="info-label">圧縮後</span><span id="newSize" class="info-value">-</span></div>
+            <div class="info-item"><span class="info-label">削減率</span><span id="reductionPercent" class="info-value">0%</span></div>
+        </div>
+        <button id="downloadBtn" class="btn-exec" style="background:#28a745; margin-top:15px;" onclick="downloadImage()">画像を保存する</button>
+        <img id="preview" class="preview-img">
+    </div>
+
+    <script>
+        let originalImage = null, originalSizeInBytes = 0, fileName = "", currentMode = null, outputFormat = 'image/jpeg', compressedBlob = null;
+
+        function handleFile(file) {
+            if (!file) return;
+            fileName = file.name.replace(/\.[^/.]+$/, "");
+            originalSizeInBytes = file.size;
+            
+            // 初期のフォーマット判定
+            const initialFormat = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+            selectFormat(initialFormat);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    document.getElementById('origSize').innerText = formatSize(originalSizeInBytes);
+                    document.getElementById('origW').innerText = img.width;
+                    document.getElementById('modeSelector').style.display = 'block';
+                    document.getElementById('controls').style.display = 'none';
+                    document.getElementById('uploadText').innerText = "選択中: " + file.name;
+                    hideResults();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('m-' + mode).classList.add('selected');
+            document.getElementById('controls').style.display = 'block';
+            updateUIState();
+            hideResults();
+        }
+
+        function selectFormat(format) {
+            outputFormat = format;
+            document.querySelectorAll('#formatPresets .btn-preset').forEach(btn => btn.classList.remove('active'));
+            document.getElementById({'image/jpeg': 'f-jpg', 'image/png': 'f-png', 'image/webp': 'f-webp'}[format]).classList.add('active');
+            updateUIState();
+            hideResults();
+        }
+
+        function updateUIState() {
+            if (!currentMode) return;
+            const isPNG = outputFormat === 'image/png';
+            const isQualityOnly = currentMode === 'quality';
+
+            // セクション表示の制御
+            document.getElementById('resizeSettings').classList.toggle('hidden', isQualityOnly);
+            document.getElementById('qualitySettings').classList.toggle('hidden', currentMode === 'resize');
+            
+            // PNG時の挙動：警告を出し、設定セクションをグレーアウト
+            document.getElementById('pngWarning').classList.toggle('hidden', !isPNG);
+            document.getElementById('qualitySettings').classList.toggle('disabled-section', isPNG);
+
+            // ラベルの更新
+            const qVal = document.getElementById('qLevelVal'), qUnit = document.getElementById('qUnit');
+            if (isPNG) { 
+                qVal.innerText = "-"; 
+                qUnit.innerText = ""; 
+            } else { 
+                qVal.innerText = document.getElementById('qualityRange').value; 
+                qUnit.innerText = "%"; 
+            }
+
+            // 実行ボタンの論理ガード
+            const btn = document.getElementById('execBtn');
+            if (isPNG && isQualityOnly) {
+                btn.disabled = true;
+                btn.classList.add('danger-lock');
+                btn.innerText = "PNGは画質調整のみでは圧縮不可";
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('danger-lock');
+                btn.innerText = "圧縮を実行する";
+            }
+        }
+
+        function applyResizePreset(val) { document.getElementById('cutRange').value = val; syncFromCut(); }
+        function syncFromCut() {
+            if (!originalImage) return;
+            const cut = parseInt(document.getElementById('cutRange').value);
+            document.getElementById('cutVal').innerText = cut;
+            document.getElementById('targetWidth').value = Math.round(originalImage.width * (100 - cut) / 100);
+            updatePresetActiveState('resizePresets', cut);
+            hideResults();
+        }
+        function syncFromWidth() {
+            if (!originalImage) return;
+            let w = parseInt(document.getElementById('targetWidth').value);
+            if (!w || w < 1) return;
+            let cut = Math.min(Math.max(Math.round(100 - (w / originalImage.width * 100)), 0), 90);
+            document.getElementById('cutRange').value = cut;
+            document.getElementById('cutVal').innerText = cut;
+            updatePresetActiveState('resizePresets', cut);
+            hideResults();
+        }
+        function applyQualityPreset(val) {
+            if (outputFormat === 'image/png') return;
+            document.getElementById('qualityRange').value = val;
+            updateQualityLabel();
+        }
+        function updateQualityLabel() {
+            if (outputFormat === 'image/png') return;
+            const level = parseInt(document.getElementById('qualityRange').value);
+            document.getElementById('qLevelVal').innerText = level;
+            updatePresetActiveState('qualityPresets', level);
+            hideResults();
+        }
+        function updatePresetActiveState(containerId, currentVal) {
+            document.querySelectorAll(`#${containerId} .btn-preset`).forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.val) === parseInt(currentVal));
+            });
+        }
+        function hideResults() {
+            document.getElementById('resultArea').style.display = 'none';
+            if (compressedBlob) { URL.revokeObjectURL(document.getElementById('preview').src); compressedBlob = null; }
+        }
+
+        function compressImage() {
+            if (!originalImage || !currentMode) return;
+            const btn = document.getElementById('execBtn'), dlBtn = document.getElementById('downloadBtn');
+            btn.disabled = true; dlBtn.disabled = true; btn.innerText = "圧縮中...";
+
+            setTimeout(() => {
+                const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+                const targetW = (currentMode === 'quality') ? originalImage.width : parseInt(document.getElementById('targetWidth').value);
+                const scale = targetW / originalImage.width;
+                canvas.width = targetW; canvas.height = originalImage.height * scale;
+
+                if (outputFormat === 'image/jpeg') { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+
+                let quality = 0.92;
+                if (outputFormat !== 'image/png' && currentMode !== 'resize') {
+                    quality = (100 - parseInt(document.getElementById('qualityRange').value)) / 100;
+                }
+
+                canvas.toBlob((blob) => {
+                    compressedBlob = blob;
+                    document.getElementById('preview').src = URL.createObjectURL(blob);
+                    document.getElementById('newSize').innerText = formatSize(blob.size);
+                    document.getElementById('reductionPercent').innerText = ((originalSizeInBytes - blob.size) / originalSizeInBytes * 100).toFixed(1) + '%';
+                    document.getElementById('resultArea').style.display = 'block';
+                    btn.disabled = false; dlBtn.disabled = false; btn.innerText = "圧縮を実行する";
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, outputFormat, quality);
+            }, 60);
+        }
+
+        function downloadImage() {
+            if (!compressedBlob) return;
+            const link = document.createElement('a');
+            link.href = document.getElementById('preview').src;
+            link.download = `compressed_${fileName}.${{'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp'}[outputFormat]}`;
+            link.click();
+        }
+
+        function formatSize(bytes) {
+            if (bytes <= 0) return '0 B';
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + ['B', 'KB', 'MB'][i];
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#007bff'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#ddd'; });
+        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.borderColor = '#ddd'; handleFile(e.dataTransfer.files[0]); });
+    </script>
+</body>
+</html>
