@@ -39,7 +39,6 @@
         }
         .section-title { font-weight: bold; font-size: 14px; margin-bottom: 12px; color: #444; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
 
-        /* グレーアウト設定（中身だけを薄くする） */
         .disabled-section { opacity: 0.4; pointer-events: none; background-color: #f1f1f1; }
 
         .preset-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -70,7 +69,6 @@
         .btn-exec:disabled { background: #aaa; cursor: not-allowed; }
         .btn-exec.danger-lock { background: #dc3545 !important; }
 
-        /* 警告ボックスの改善 */
         .warning-box { 
             background: #fff9db; color: #856404; border: 1px solid #ffe066; 
             padding: 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; 
@@ -168,9 +166,9 @@
         <h3 style="font-size:0.95rem; margin:12px 0 8px;">3. 出力形式を選択</h3>
         <div class="settings-section">
             <div class="preset-group" id="formatPresets">
-                <button class="btn-preset active" id="f-jpg" onclick="selectFormat('image/jpeg')">JPEG</button>
+                <button class="btn-preset" id="f-jpg" onclick="selectFormat('image/jpeg')">JPEG</button>
                 <button class="btn-preset" id="f-png" onclick="selectFormat('image/png')">PNG (透過)</button>
-                <button class="btn-preset" id="f-webp" onclick="selectFormat('image/webp')">WebP (軽量)</button>
+                <button class="btn-preset active" id="f-webp" onclick="selectFormat('image/webp')">WebP (軽量)</button>
             </div>
         </div>
 
@@ -188,16 +186,16 @@
     </div>
 
     <script>
-        let originalImage = null, originalSizeInBytes = 0, fileName = "", currentMode = null, outputFormat = 'image/jpeg', compressedBlob = null;
+        // outputFormat の初期値を 'image/webp' に変更
+        let originalImage = null, originalSizeInBytes = 0, fileName = "", currentMode = null, outputFormat = 'image/webp', compressedBlob = null;
 
         function handleFile(file) {
             if (!file) return;
             fileName = file.name.replace(/\.[^/.]+$/, "");
             originalSizeInBytes = file.size;
             
-            // 初期のフォーマット判定
-            const initialFormat = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-            selectFormat(initialFormat);
+            // ファイル選択時に出力を上書きせず、現在の設定（WebP）を維持
+            selectFormat(outputFormat);
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -238,15 +236,12 @@
             const isPNG = outputFormat === 'image/png';
             const isQualityOnly = currentMode === 'quality';
 
-            // セクション表示の制御
             document.getElementById('resizeSettings').classList.toggle('hidden', isQualityOnly);
             document.getElementById('qualitySettings').classList.toggle('hidden', currentMode === 'resize');
             
-            // PNG時の挙動：警告を出し、設定セクションをグレーアウト
             document.getElementById('pngWarning').classList.toggle('hidden', !isPNG);
             document.getElementById('qualitySettings').classList.toggle('disabled-section', isPNG);
 
-            // ラベルの更新
             const qVal = document.getElementById('qLevelVal'), qUnit = document.getElementById('qUnit');
             if (isPNG) { 
                 qVal.innerText = "-"; 
@@ -256,7 +251,6 @@
                 qUnit.innerText = "%"; 
             }
 
-            // 実行ボタンの論理ガード
             const btn = document.getElementById('execBtn');
             if (isPNG && isQualityOnly) {
                 btn.disabled = true;
