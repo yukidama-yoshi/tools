@@ -57,33 +57,19 @@
             justify-content: center;
             font-size: 14px;
             font-weight: bold;
+            color: #555;
             margin-bottom: 5px;
         }
         #counter-area {
-            margin: 0 10px;
-            padding: 6px 12px; 
-            background: #000;
-            border: 2px inset #ccc;
+            margin: 0 6px;
             display: inline-block;
-            line-height: 0;
-            /* 欠け対策：はみ出しを許可し、幅に余裕を持たせる */
-            overflow: visible; 
-            width: auto;
-            min-width: fit-content;
         }
         .counter-digits {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0;
-        }
-        .counter-digits img {
-            /* 画像サイズを32pxに調整 */
-            height: 32px; 
-            width: auto;
-            display: block;
-            margin: 0;
-            image-rendering: pixelated;
+            color: #3498db; /* サイトのテーマカラー（青）に合わせました */
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
         }
         .kiriban-note {
             font-size: 11px;
@@ -102,9 +88,9 @@
         <div class="counter-wrapper">
             ツール利用数：
             <div id="counter-area">
-                <div id="counter-display" class="counter-digits"></div>
+                <span id="counter-display" class="counter-digits">000000</span>
             </div>
-            回！
+            回
         </div>
         <div id="admin-badge">●管理者モード（カウント除外中）</div>
         <div class="kiriban-note">
@@ -117,7 +103,6 @@
         <li><a href="dakuten.html" class="tool-link">D゛a゛k゛u゛t゛e゛n゛</a></li>
         <li><a href="dentaku.html" class="tool-link">ブラウザ電卓（ベータ版）</a></li>
         <li><a href="altushuku.html" class="tool-link">画像圧縮ツール（ベータ版）</a></li>
-
     </ul>
 
     <hr style="border: 0; border-top: 1px solid #eee; margin: 40px 0 20px;">
@@ -128,7 +113,6 @@
             const twitterLink = document.getElementById('twitter-share');
             const adminBadge = document.getElementById('admin-badge');
             const WORKER_URL = 'https://dry-silence-4f1f.y-bb0.workers.dev';
-            const IMAGE_PATH = 'akusesu_kaunta_moji_sozai/'; 
             const SITE_URL = window.location.href;
             
             // ツールページ用の個別ID
@@ -163,14 +147,9 @@
                 const tweetText = `ゆきだまの「ツール置き場」でキリ番（${countStr}）を踏んだよ！\n${SITE_URL}\n\n@yukidama_yoshi`;
                 twitterLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
-                // 画像表示
-                displayArea.innerHTML = ''; 
-                for (let char of countStr) {
-                    const img = document.createElement('img');
-                    img.src = `${IMAGE_PATH}${char}.png`;
-                    img.alt = char;
-                    displayArea.appendChild(img);
-                }
+                // テキストとして代入
+                displayArea.textContent = countStr;
+
             } catch (err) {
                 displayArea.innerHTML = '<span style="color:#f00; font-size:10px;">ERR</span>';
             }
